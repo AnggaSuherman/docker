@@ -1,0 +1,4 @@
+FROM httpd:2.4
+COPY provider.json /usr/local/apache2/htdocs/provider.json
+RUN echo "AddDefaultCharset utf-8" >> /usr/local/apache2/conf/httpd.conf && \
+    echo "AddType 'application/json' .json" >> /usr/local/apache2/conf/httpd.conf
