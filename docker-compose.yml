@@ -1,0 +1,63 @@
+version: '3'
+services:
+  griddb1:
+    container_name: node1
+    image: griddb-server:4.2
+    build:
+      context: ./Docker_server
+      dockerfile: Dockerfile_server
+    env_file: .env
+    networks:
+      pub_net:
+        ipv4_address: ${IPADDR_NODE1}
+    volumes:
+      - "node1:/var/lib/gridstore/"
+  griddb2:
+    container_name: node2
+    image: griddb-server:4.2
+    env_file: .env
+    networks:
+      pub_net:
+        ipv4_address: ${IPADDR_NODE2}
+    volumes:
+      - "node2:/var/lib/gridstore/"
+  griddb3:
+    container_name: node3
+    image: griddb-server:4.2
+    env_file: .env
+    networks:
+      pub_net:
+        ipv4_address: ${IPADDR_NODE3}
+    volumes:
+      - "node3:/var/lib/gridstore/"
+  client:
+    container_name: client
+    image: griddb-client:4.2
+    build:
+      context: ./Docker_client
+      dockerfile: Dockerfile_client
+    env_file: .env
+    networks:
+      pub_net:
+        ipv4_address: ${IPADDR_CLIENT}
+    volumes:
+      - "client:/var/lib/gridstore/log"
+    depends_on:
+      - "griddb1"
+      - "griddb2"
+      - "griddb3"
+
+volumes:
+  node1:
+  node2:
+  node3:
+  client:
+  
+networks:
+  pub_net:
+    driver: ${DRIVER}
+    driver_opts:
+      parent: ${DRIVER_PARENT}
+    ipam:
+      config:
+        - subnet: ${SUBNET}
