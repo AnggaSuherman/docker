@@ -1,0 +1,29 @@
+FROM centos:centos7
+
+# Configure proxy
+#ARG http_proxy=http://<proxy_username>:<proxy_password>@<proxy_address>:<proxy_port>
+#ARG https_proxy=http://<proxy_username>:<proxy_password>@<proxy_address>:<proxy_port>
+
+# Copy files in rpm directory to /tmp/rpm in container
+ADD rpm /tmp/rpm
+
+RUN \
+# Install initscripts and jq
+    yum -y install initscripts epel-release && \
+    yum -y install jq && \
+    yum clean all && \
+# Install GridDB
+    /bin/rpm -ivh /tmp/rpm/*.rpm && \
+    rm -rf /tmp/rpm
+# Docker entrypoint setup
+COPY docker-entrypoint_server.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint_server.sh && \
+    ln -s usr/local/bin/docker-entrypoint_server.sh /docker-entrypoint_server.sh
+
+VOLUME ["/var/lib/gridstore/log"]
+
+ENTRYPOINT ["docker-entrypoint_server.sh"]
+
+EXPOSE 10001 20001 10040 10010 10020
+
+CMD ["griddb"]
