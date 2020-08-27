@@ -1,0 +1,41 @@
+FROM centos:centos7
+
+# Configure proxy
+#ARG http_proxy=http://<proxy_username>:<proxy_password>@<proxy_address>:<proxy_port>
+#ARG https_proxy=http://<proxy_username>:<proxy_password>@<proxy_address>:<proxy_port>
+
+ENV GS_HOME /var/lib/gridstore
+ENV TOMCAT_DIR ${GS_HOME}/tomcat
+
+# Copy files in rpm directory to /tmp/rpm in container
+ADD rpm /tmp/rpm
+ADD 3rd /tmp/3rd
+COPY docker-entrypoint_client.sh /usr/local/bin/
+
+RUN \
+# Install initscripts and jq
+    yum -y install initscripts epel-release && \
+    yum -y install jq && \
+    yum clean all && \
+# Install GridDB
+    /bin/rpm -ivh /tmp/rpm/*.rpm && \
+        rm -rf /tmp/rpm && \
+# Install java
+    /bin/rpm -ivh /tmp/3rd/*.rpm && \
+# Install tomcat
+    mkdir ${TOMCAT_DIR} && \
+    tar xf /tmp/3rd/apache-tomcat-*.tar.gz -C ${TOMCAT_DIR} --strip-components 1 && \
+    chown -R gsadm:gridstore ${TOMCAT_DIR} && \
+    cp /usr/gridstore/web/gs_admin.war ${TOMCAT_DIR}/webapps && \
+    mkdir -p ${GS_HOME}/webapi/log && \
+    mkdir -p ${GS_HOME}/conf && \
+    rm -rf /tmp/3rd && \
+# Client entrypoint
+    chmod +x /usr/local/bin/docker-entrypoint_client.sh && \
+    ln -s usr/local/bin/docker-entrypoint_client.sh /docker-entrypoint_client.sh
+
+ENTRYPOINT ["docker-entrypoint_client.sh"]
+
+EXPOSE 8080 8081
+
+CMD ["client"]
